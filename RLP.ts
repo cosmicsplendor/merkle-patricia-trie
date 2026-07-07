@@ -22,6 +22,9 @@ const toHex = (dec: number): string => {
     const hex = dec.toString(16);
     return hex.length % 2 === 1 ? `0${hex}` : hex;
 }
+const toDec = (hex: string): number => {
+    return parseInt(hex, 16)
+}
 
 const getEncodedListItemsMeta = (encodedItems: string): EncodedData => {
     const bytesLength = encodedItems.length / 2; // each byte is represented by 2 hex characters
@@ -66,6 +69,44 @@ export const encode = (data: DecodedData): EncodedData => {
     return prefix.concat(data);
 }
 
+export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, number] => {
+    const firstByte = toDec(data.slice(0, 2));
+    if (data.length === 2 && firstByte <= metaSubspaces.singleByte.max) {
+        return [data, 2];
+    }
+    if (firstByte >= metaSubspaces.shortString.min && firstByte <= metaSubspaces.longString.max) {
+        const nextItemStart = firstByte - metaSubspaces.shortString.min
+        return [data.slice(2, nextItemStart), nextItemStart];
+    }
+    if (firstByte >= metaSubspaces.longString.min && firstByte <= metaSubspaces.longString.max) {
+        const lengthOfLength = firstByte - metaSubspaces.longString.min + 1;
+        const startOfData = 2 + lengthOfLength * 2;
+        const lengthOfData = toDec(data.slice(2, startOfData));
+        const nextItemStart = startOfData + lengthOfData * 2;
+        const d = data.slice(startOfData, nextItemStart);
+        return [d, nextItemStart];
+    }
+    let arrayItems = "";
+    if (firstByte >= metaSubspaces.shortArray.min && firstByte <= metaSubspaces.shortArray.max) {
+        // Implementation for decoding arrays
+        const lengthOfData = firstByte - metaSubspaces.shortArray.min;
+        arrayItems = data.slice(2, 2 + lengthOfData * 2);
+    } else if (firstByte >= metaSubspaces.longArray.min && firstByte <= metaSubspaces.longArray.max) {
+        const lengthOfLength = firstByte - metaSubspaces.longArray.min + 1;
+        const startOfData = 2 + lengthOfLength * 2;
+        const lengthOfData = toDec(data.slice(2, startOfData));
+        arrayItems = data.slice(startOfData, startOfData + lengthOfData * 2);
+    }
+
+    const decodedArray:DecodedData = [];
+    while (arrayItems.length > 0) {
+        const [ decodedItem, nextItemStart ]= decodeWithConsumedLength(arrayItems);
+        decodedArray.push(decodedItem);
+        arrayItems = arrayItems.slice(nextItemStart);
+    }
+    return [decodedArray, data.length];
+}
+
 export const decode = (data: EncodedData): DecodedData => {
-    return "";
+    return decodeWithConsumedLength(data)[0];
 }
