@@ -75,7 +75,8 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
         return [data, 2];
     }
     if (firstByte >= metaSubspaces.shortString.min && firstByte <= metaSubspaces.longString.max) {
-        const nextItemStart = firstByte - metaSubspaces.shortString.min
+        console.log("second conditional", firstByte)
+        const nextItemStart = 2 + 2 * (firstByte - metaSubspaces.shortString.min)
         return [data.slice(2, nextItemStart), nextItemStart];
     }
     if (firstByte >= metaSubspaces.longString.min && firstByte <= metaSubspaces.longString.max) {
