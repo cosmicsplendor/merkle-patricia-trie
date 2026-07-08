@@ -1,5 +1,5 @@
-type EncodedData = string;
-type DecodedData = string | DecodedData[];
+export type EncodedData = string;
+export type DecodedData = string | DecodedData[];
 
 /**
  * PREREQ
@@ -45,15 +45,15 @@ const getStringMeta = (data: string): string => {
     if (bytesLength === 0) {
         return toHex(128); // empty string is represented by 0x80
     }
-    if (parseInt(data, 16) < 128) {
+    if (toDec(data) < 128) {
         return "";
     }
     if (bytesLength <= 55) {
         return toHex(128 + bytesLength);
     }
-    const lengthBytes = toHex(bytesLength);
-    const lengthMeta = toHex(183 + lengthBytes.length * 0.5);
-    return lengthMeta.concat(lengthBytes);
+    const length = toHex(bytesLength);
+    const lengthLength = toHex(metaSubspaces.longString.min - 1 + length.length * 0.5);
+    return lengthLength.concat(length);
 }
 
 export const encode = (data: DecodedData): EncodedData => {
@@ -74,7 +74,7 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
     if (firstByte <= metaSubspaces.singleByte.max) {
         return [toHex(firstByte), 2];
     }
-    if (firstByte >= metaSubspaces.shortString.min && firstByte <= metaSubspaces.longString.max) {
+    if (firstByte >= metaSubspaces.shortString.min && firstByte <= metaSubspaces.shortString.max) {
         const nextItemStart = 2 + 2 * (firstByte - metaSubspaces.shortString.min)
         return [data.slice(2, nextItemStart), nextItemStart];
     }
@@ -103,7 +103,6 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
         const [ decodedItem, nextItemStart ] = decodeWithConsumedLength(arrayItems);
         decodedArray.push(decodedItem);
         arrayItems = arrayItems.slice(nextItemStart);
-        console.log(arrayItems)
     }
     return [decodedArray, data.length];
 }
