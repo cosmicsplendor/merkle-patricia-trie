@@ -71,11 +71,10 @@ export const encode = (data: DecodedData): EncodedData => {
 
 export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, number] => {
     const firstByte = toDec(data.slice(0, 2));
-    if (data.length === 2 && firstByte <= metaSubspaces.singleByte.max) {
-        return [data, 2];
+    if (firstByte <= metaSubspaces.singleByte.max) {
+        return [toHex(firstByte), 2];
     }
     if (firstByte >= metaSubspaces.shortString.min && firstByte <= metaSubspaces.longString.max) {
-        console.log("second conditional", firstByte)
         const nextItemStart = 2 + 2 * (firstByte - metaSubspaces.shortString.min)
         return [data.slice(2, nextItemStart), nextItemStart];
     }
@@ -101,9 +100,10 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
 
     const decodedArray:DecodedData = [];
     while (arrayItems.length > 0) {
-        const [ decodedItem, nextItemStart ]= decodeWithConsumedLength(arrayItems);
+        const [ decodedItem, nextItemStart ] = decodeWithConsumedLength(arrayItems);
         decodedArray.push(decodedItem);
         arrayItems = arrayItems.slice(nextItemStart);
+        console.log(arrayItems)
     }
     return [decodedArray, data.length];
 }
