@@ -45,7 +45,7 @@ const getStringMeta = (data: string): string => {
     if (bytesLength === 0) {
         return toHex(128); // empty string is represented by 0x80
     }
-    if (toDec(data) < 128) {
+    if (toDec(data) < 128 && bytesLength === 1) {
         return "";
     }
     if (bytesLength <= 55) {
@@ -107,7 +107,6 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
     while (arrayItems.length > 0) {
         const [ decodedItem, nextItemStart ] = decodeWithConsumedLength(arrayItems);
         decodedArray.push(decodedItem);
-        console.log({arrayItems, nextItemStart})
         arrayItems = arrayItems.slice(nextItemStart);
     }
     return [decodedArray, consumedLength];
