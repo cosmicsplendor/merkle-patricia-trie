@@ -87,24 +87,30 @@ export const decodeWithConsumedLength = (data: EncodedData): [DecodedData, numbe
         return [d, nextItemStart];
     }
     let arrayItems = "";
+    let consumedLength = 0;
     if (firstByte >= metaSubspaces.shortArray.min && firstByte <= metaSubspaces.shortArray.max) {
         // Implementation for decoding arrays
         const lengthOfData = firstByte - metaSubspaces.shortArray.min;
-        arrayItems = data.slice(2, 2 + lengthOfData * 2);
+        consumedLength = 2 + lengthOfData * 2;
+        arrayItems = data.slice(2, consumedLength);
     } else if (firstByte >= metaSubspaces.longArray.min && firstByte <= metaSubspaces.longArray.max) {
         const lengthOfLength = firstByte - metaSubspaces.longArray.min + 1;
         const startOfData = 2 + lengthOfLength * 2;
         const lengthOfData = toDec(data.slice(2, startOfData));
-        arrayItems = data.slice(startOfData, startOfData + lengthOfData * 2);
+        const consumedLength = startOfData + lengthOfData * 2;
+        arrayItems = data.slice(startOfData, consumedLength);
+    } else { // this is never gonna happen, capturing error anyway
+        throw new Error("Array data size exceeds max permissible limit");
     }
 
     const decodedArray:DecodedData = [];
     while (arrayItems.length > 0) {
         const [ decodedItem, nextItemStart ] = decodeWithConsumedLength(arrayItems);
         decodedArray.push(decodedItem);
+        console.log({arrayItems, nextItemStart})
         arrayItems = arrayItems.slice(nextItemStart);
     }
-    return [decodedArray, data.length];
+    return [decodedArray, consumedLength];
 }
 
 export const decode = (data: EncodedData): DecodedData => {

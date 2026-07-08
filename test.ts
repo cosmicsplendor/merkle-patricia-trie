@@ -7,8 +7,8 @@ const payloads: DecodedData = [
     ["0b", "9234", [ "dead" ] ],
     Array(200).fill(1).join("")
 ]
-payloads.push([...payloads])
-payloads.forEach(p => {
+// payloads.push([...payloads])
+Array(1).fill(payloads).forEach(p => {
     console.log("Payload: ", p)
     console.log("Encoded: ", rlpEncode(p))
     console.log("Decoded: ", rlpDecode(rlpEncode(p)))
